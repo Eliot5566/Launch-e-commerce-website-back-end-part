@@ -109,7 +109,7 @@ function Product(props) {
       try {
         let response = await axios.get(
           //這裡的5000是後端的port number
-          `http://localhost:10000/api/products/${_id}`
+          `https://last-hx4j.onrender.com/products/${_id}`
         );
         setData(response.data); // 将数据保存到data中
       } catch (error) {
