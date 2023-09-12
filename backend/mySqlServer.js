@@ -186,7 +186,7 @@ app.post('/subscribe', async (req, res) => {
       console.log('Email sent: ' + info.response);
       // 改成使用alert 提示訂閱成功
       // res.redirect('/');
-      res.status(200).send('<script>alert("訂閱成功"); window.location.href = "/";</script>');
+      res.status(200).send('<script>alert("訂閱成功"); window.location.href = "https://last-frontendfinal.onrender.com/";</script>');
 
       // 之後把網頁轉回首頁
 
