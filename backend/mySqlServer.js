@@ -15,6 +15,14 @@ const mysqlOrderRouter = require('./routes/orderRoute.js');
 const bodyParser = require('body-parser'); // 引入 body-parser 用于解析请求体
 const cors = require('cors'); // 引入 cors 用于处理跨域请求
 
+const nodemailer = require('nodemailer');
+const emailValidator = require('email-validator');
+//訂閱
+app.use(express.static('public'));
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+//訂閱
 const app = express();
 app.use(cors());
 app.use(bodyParser.json()); // 使用 body-parser 解析 JSON 请求体
@@ -125,6 +133,70 @@ app.get('/:_id', async (req, res) => {
     });
   }
 });
+
+//訂閱功能
+app.post('/subscribe', async (req, res) => {
+
+
+  const email = req.body.email;
+  console.log(email);
+  // 驗證郵件地址格式
+  if (!emailValidator.validate(email)) {
+    res.status(400).send('無效的郵件地址');
+    return;
+  }
+
+  const transporter = nodemailer.createTransport({
+    service: 'Gmail',
+    auth: {
+      user: process.env.MAIL_USER = 'eliotworkmail@gmail.com',
+      pass: process.env.MAIL_PASS = 'myza ffmq yyid xlpq'
+    }
+  });
+
+  const mailOptions = {
+    from: process.env.MAIL_USER = 'eliotworkmail@gmail.com',
+    to: email,
+    subject: '拾月菓-訂閱確認',
+    text: `親愛的拾月菓（Shiyue Guo）的忠實顧客，
+
+      感謝您訂閱拾月菓的最新消息！我們非常高興您加入我們的大家庭。
+      
+      您將第一個獲得以下好處：
+      
+      獨家折扣和促銷信息：您將獲得我們最新的促銷信息，包括折扣和特別優惠。
+      
+      新產品發布通知：無需等待，我們將直接通知您我們的新產品發布。
+      
+      活動邀請：不定期，我們會為我們的忠實顧客舉辦特別活動，您將被邀請參加。
+      
+      再次感謝您對拾月菓的支持。如果您有任何問題或建議，請隨時聯繫我們。
+      
+      祝您擁有美味的日式果子時光！
+      
+      拾月菓團隊`
+  };
+
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log(error);
+      res.status(500).send('訂閱失敗');
+    } else {
+      console.log('Email sent: ' + info.response);
+      // 改成使用alert 提示訂閱成功
+      // res.redirect('/');
+      res.status(200).send('<script>alert("訂閱成功"); window.location.href = "/";</script>');
+
+      // 之後把網頁轉回首頁
+
+
+    }
+  });
+});
+
+app.use(express.static('public'));
+//訂閱功能
 
 // 使用 express.json() 中介軟體來解析 JSON 格式的請求主體
 app.use(express.json());
