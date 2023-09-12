@@ -17,17 +17,17 @@ const cors = require('cors'); // 引入 cors 用于处理跨域请求
 
 const nodemailer = require('nodemailer');
 const emailValidator = require('email-validator');
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json()); // 使用 body-parser 解析 JSON 请求体
+// const productRouter = require('./routes/showAllProduct.js');
 //訂閱
 app.use(express.static('public'));
 app.use(bodyParser.urlencoded({
   extended: true
 }));
 //訂閱
-const app = express();
-app.use(cors());
-app.use(bodyParser.json()); // 使用 body-parser 解析 JSON 请求体
-// const productRouter = require('./routes/showAllProduct.js');
-
 // MySQL 連線設定 只需要const db 不用調用 是因為在mysqlProduct.js中已經調用了
 //mysqlProduct.js 會調用mysql2/promise 這個套件
 // const db = mysql.createPool({
