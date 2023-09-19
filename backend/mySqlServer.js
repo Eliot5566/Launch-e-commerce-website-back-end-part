@@ -9,7 +9,6 @@ const express = require('express');
 const path = require('path');
 const mysql = require('mysql');
 const mysqlProductRouter = require('./routes/mysqlProduct.js');
-const mysqlSeedRouter = require('./routes/mysqlSeedRoures.js');
 const mysqlUsersRouter = require('./routes/mysqlUsers.js');
 const mysqlOrderRouter = require('./routes/orderRoute.js');
 const bodyParser = require('body-parser'); // 引入 body-parser 用于解析请求体
@@ -75,7 +74,7 @@ async function executeQuery(sql, params) {
     const results = await queryAsync(sql, params);
     return results;
   } catch (error) {
-    console.error('数据库查询错误:', error);
+    console.error('數據庫查詢錯誤:', error);
     throw error;
   }
 }
@@ -93,7 +92,7 @@ app.get('/products', async (req, res) => {
     console.log(results);
     return res.json(results);
   } catch (error) {
-    console.error('数据库查询错误:', error);
+    console.error('數據庫查詢錯誤:', error);
     return res.status(500).json({
       error: 'Internal server error'
     });
@@ -110,7 +109,7 @@ app.get('/products/:category', async (req, res) => {
     console.log(results);
     return res.json(results);
   } catch (error) {
-    console.error('数据库查询错误:', error);
+    console.error('數據庫查詢錯誤:', error);
     return res.status(500).json({
       error: 'Internal server error'
     });
@@ -127,17 +126,49 @@ app.get('/:_id', async (req, res) => {
     console.log(results);
     return res.json(results);
   } catch (error) {
-    console.error('数据库查询错误:', error);
+    console.error('數據庫查詢錯誤:', error);
     return res.status(500).json({
       error: 'Internal server error'
     });
   }
 });
 
+///卡片
+app.post('/save-card-info', (req, res) => {
+  const {
+    userId,
+    cardType,
+    cardContent,
+    selectedProduct
+  } = req.body;
+
+  // 把卡片資訊 產品資訊存入資料庫
+  const sql =
+    'INSERT INTO cards (user_id, card_type, card_content, selected_product) VALUES (?, ?, ?, ?)';
+  db.query(
+    sql,
+    [userId, cardType, cardContent, selectedProduct],
+    (err, result) => {
+      if (err) {
+        console.error(err);
+        res.status(500).json({
+          message: 'Internal Server Error'
+        });
+      } else {
+        res
+          .status(200)
+          .json({
+            message: 'Card and product information saved successfully'
+          });
+      }
+    }
+  );
+});
+
+
+
 //訂閱功能
 app.post('/subscribe', async (req, res) => {
-
-
   const email = req.body.email;
   console.log(email);
   // 驗證郵件地址格式

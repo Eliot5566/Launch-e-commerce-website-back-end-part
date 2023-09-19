@@ -23,10 +23,6 @@ orderRouter.post(
     console.log('Received order request:', req.body.orderItems);
     let connection;
     try {
-      //如何修改?  在async function 前面加上await 並且在pool.getConnection();後面加上.execute
-      //跳出錯誤 TypeError: pool.getConnection.execute is not a function 這裡的錯誤是因為沒有await
-      //如何修改?  在async function 前面加上await 並且在pool.getConnection();後面加上.execute
-      //await pool.promise().getConnection() 這樣就可以了 但是會跳出錯誤 TypeError: pool.promise(...).getConnection is not a function
       const connection = await pool.promise().getConnection(); // 獲取連接
 
       const newOrder = {
@@ -57,34 +53,6 @@ orderRouter.post(
         ...newOrder,
       };
 
-      // 送出訂單後讓產品庫存量減少
-      for (const orderItem of req.body.orderItems) {
-        if (orderItem.quantity !== undefined && orderItem.name !== undefined) {
-          // 使用 execute 執行 SQL 查詢
-          const [productRows] = await connection.execute(
-            'SELECT * FROM products WHERE _id = ?',
-            [orderItem._id]
-          );
-
-          // 檢查查詢結果 是否有產品
-          if (productRows.length === 1) {
-            const product = productRows[0];
-            console.log('product:', product);
-            // 執行sql更新產品庫存
-            await connection.execute(
-              'UPDATE products SET countInStock	 = ? WHERE _id = ?',
-              [product.countInStock - orderItem.quantity, orderItem._id]
-            );
-          } else {
-            // 如果沒有產品，則輸出錯誤
-            console.error('Product not found for id:', orderItem._id);
-          }
-        } else {
-          // 處理錯誤
-          console.error('Undefined quantity or name:', orderItem);
-        }
-      }
-
       // 確保連接被釋放回連接池
       connection.release();
 
@@ -99,18 +67,79 @@ orderRouter.post(
       });
     } finally {
       if (connection) {
-        connection.release(); // 释放连接回连接池
+        connection.release();
       }
     }
   })
 );
+
+//創建獲取歷史訂單路由
+
+orderRouter.get(
+  '/mine',
+  isAuth,
+  expressAsyncHandler(async (req, res) => {
+    const userId = req.user._id;
+
+    let connection;
+    try {
+      connection = await pool.promise().getConnection();
+
+      const [orders] = await connection.execute(
+        'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
+        //DESC是降序，ASC是升序
+        [userId]
+      );
+      res.send(orders);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({
+        message: 'Error fetching orders'
+      });
+    } finally {
+      if (connection) {
+        connection.release();
+      }
+    }
+  })
+);
+
+// orderRouter.get(
+//   '/mine',
+//   isAuth,
+//   expressAsyncHandler(async (req, res) => {
+
+//     const orderId = req.params.id;
+//     const userId = req.user._id;
+//     let connection;
+//     try {
+//       connection = await pool.promise().getConnection();
+
+//       const [orders] = await connection.execute(
+//         'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
+//         //DESC是降序，ASC是升序
+//         [userId]
+
+//       );
+//       res.send(orders);
+//     } catch (error) {
+//       console.error(error);
+//       res.status(500).send({ message: 'Error fetching orders' });
+//     } finally {
+//       if (connection) {
+//         connection.release();
+//       }
+//     }
+//   })
+
+// )
+
 //設定路由 /api/orders/:id 使用 mysqlOrderRouter
 //用來顯示訂單資料
 orderRouter.get(
   '/:id',
   isAuth,
   expressAsyncHandler(async (req, res) => {
-    // 使用参数化查询以防止 SQL 注入攻击
     const orderId = req.params.id;
     const userId = req.user._id;
 
@@ -118,7 +147,7 @@ orderRouter.get(
     try {
       connection = await pool.promise().getConnection();
 
-      // 使用 JOIN 查询订单和用户，前提是 orders 表中有 user_id 列用于关联
+      //需要確保order 與user資料庫有關聯
       const [orderResult] = await connection.execute(
         'SELECT o.*, u.name, u.email FROM orders o JOIN users u ON o.user_id = u._id WHERE o.id = ? AND o.user_id = ?',
         [orderId, userId]
@@ -150,7 +179,6 @@ orderRouter.put(
   '/:id/pay',
   isAuth,
   expressAsyncHandler(async (req, res) => {
-    // 使用参数化查询以防止 SQL 注入攻击
     const orderId = req.params.id;
     const userId = req.user._id;
 
@@ -158,7 +186,7 @@ orderRouter.put(
     try {
       connection = await pool.promise().getConnection();
 
-      // 使用 JOIN 查询订单和用户，前提是 orders 表中有 user_id 列用于关联
+      //使用 join 查詢訂單與用戶 前提是orders表中 有user_id列用於關聯
       const [orderResult] = await connection.execute(
         'SELECT o.*, u.name, u.email FROM orders o JOIN users u ON o.user_id = u._id WHERE o.id = ? AND o.user_id = ?',
         [orderId, userId]
@@ -175,7 +203,6 @@ orderRouter.put(
           'UPDATE orders SET is_paid = ?, paid_at = ? WHERE id = ?',
           [order.isPaid, order.paidAt, orderId]
         );
-        // Update the order.isPaid field in your code
         order.is_paid = true;
         order.paid_at = new Date();
         res.send({
@@ -202,7 +229,6 @@ orderRouter.put(
 
 module.exports = orderRouter;
 
-// const mysql = require('mysql2'); // 使用 require 导入库
 // const express = require('express');
 // const expressAsyncHandler = require('express-async-handler');
 // const isAuth = require('../utils.js').isAuth;
