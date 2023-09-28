@@ -9,10 +9,7 @@ const {
 } = require('../utils.js'); // 請確保 utils.js 的路徑正確
 const nodemailer = require('nodemailer');
 const emailValidator = require('email-validator');
-const {
-  isAuth,
-  generateToken
-} = require('../utils.js'); // 請確保 utils.js 的路徑正確
+
 
 // 請根據你的 MySQL 連接設定進行修改
 const db = mysql.createPool({
