@@ -85,11 +85,11 @@ app.get('/', (req, res) => {
 });
 
 app.get('/products', async (req, res) => {
-  const sql = 'SELECT * FROM products';
+  const sql = 'SELECT * FROM products WHERE onSale = 1';
   try {
     const results = await executeQuery(sql);
     console.log('==========丁丁 SQL指令執行OK');
-    console.log(results);
+    // console.log(results);
     return res.json(results);
   } catch (error) {
     console.error('數據庫查詢錯誤:', error);
@@ -101,12 +101,12 @@ app.get('/products', async (req, res) => {
 
 app.get('/products/:category', async (req, res) => {
   const category = req.params.category;
-  const sql = 'SELECT * FROM products where category = ?';
+  const sql = 'SELECT * FROM products where category = ? and onSale = 1';
 
   try {
     const results = await executeQuery(sql, [category]);
     console.log('==========丁丁 SQL指令執行OK');
-    console.log(results);
+    // console.log(results);
     return res.json(results);
   } catch (error) {
     console.error('數據庫查詢錯誤:', error);
@@ -118,12 +118,12 @@ app.get('/products/:category', async (req, res) => {
 
 app.get('/:_id', async (req, res) => {
   const _id = req.params._id;
-  const sql = 'SELECT * FROM products where _id = ?';
+  const sql = 'SELECT * FROM products where _id = ? and onSale = 1';
 
   try {
     const results = await executeQuery(sql, [_id]);
     console.log('==========丁丁 SQL指令執行OK');
-    console.log(results);
+    // console.log(results);
     return res.json(results);
   } catch (error) {
     console.error('數據庫查詢錯誤:', error);

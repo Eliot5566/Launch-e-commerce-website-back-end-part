@@ -87,7 +87,7 @@ orderRouter.get(
 
       const [orders] = await connection.execute(
         'SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC',
-        //DESC是降序，ASC是升序
+
         [userId]
       );
       res.send(orders);
