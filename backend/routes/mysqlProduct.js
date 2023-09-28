@@ -15,7 +15,8 @@ const db = mysql.createPool({
 productRouter.get('/', async (req, res) => {
   try {
     const connection = await db.getConnection();
-    const [products] = await connection.query('SELECT * FROM products');
+    const [products] = await connection.query('SELECT * FROM products WHERE onSale = 1');
+    // const [products] = await connection.query('SELECT * FROM products');
     connection.release();
     res.send(products);
   } catch (error) {

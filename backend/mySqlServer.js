@@ -55,7 +55,7 @@ db.connect(function (err) {
   }
 });
 
-// 创建一个函数来执行查询并返回一个 Promise
+
 function queryAsync(sql, params) {
   return new Promise((resolve, reject) => {
     db.query(sql, params, (error, results, fields) => {
@@ -253,7 +253,7 @@ app.use(express.static(path.join(__dirname, '/frontend/build')));
 app.get('*', (req, res) =>
   res.sendFile(path.join(__dirname, '/frontend/build/index.html'))
 );
-// 将路由与主应用程序关联
+
 
 app.use((err, req, res, next) => {
   res.status(500).send({
