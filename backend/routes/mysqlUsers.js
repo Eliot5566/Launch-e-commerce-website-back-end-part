@@ -290,7 +290,140 @@ userRouter.put(
 // );
 
 //定義一個路由，用來處理註冊請求
+//新增忘記密碼的路由
+userRouter.post(
+  '/forgot-password',
+  expressAsyncHandler(async (req, res) => {
+    const {
+      email
+    } = req.body;
 
+    try {
+      const connection = await db.getConnection();
+
+      // 確認重複信箱
+      const [existingUsers] = await connection.query(
+        'SELECT * FROM users WHERE email = ?',
+        [email]
+      );
+
+      if (existingUsers.length === 0) {
+        res.status(400).send({
+          message: 'Email address not registered'
+        });
+        return;
+      }
+
+      // 生成重置密碼的 token
+      const token = generateToken(existingUsers[0]);
+
+      // 寄送重置密碼郵件
+      const transporter = nodemailer.createTransport({
+        service: 'Gmail', // 使用的郵件服務提供者，可以根據需要更改
+        auth: {
+          user: (process.env.MAIL_USER = 'eliotworkmail@gmail.com'),
+          pass: (process.env.MAIL_PASS = 'myza ffmq yyid xlpq'),
+        },
+      });
+      resetPasswordLink = `http://localhost:3000/resetpassword/${token}`;
+
+      const mailOptions = {
+        from: (process.env.MAIL_USER = 'eliotworkmail@gmail.com'),
+        to: email, // 收件人電子郵件地址
+        subject: '重置密碼', // 郵件主題
+        text: `請點擊以下連結重置密碼： ${resetPasswordLink}`, // 郵件內容
+
+        html: `
+        <![CDATA[
+        ]]>
+        <div className="container">
+          <h1>重置密碼</h1>
+          <p>親愛的拾月菓（ShiyueGuo）的忠實顧客，</p>
+          <p>您最近要求重置您的密碼。請點擊以下連結重置密碼：</p>
+          <p><a href="${resetPasswordLink}">${resetPasswordLink}</a></p>
+          <p>如果您沒有要求重置密碼，請忽略此郵件。</p>
+          <p>再次感謝您對拾月菓的支持。如果您有任何問題或建議，請隨時聯繫我們。</p>
+          <p>祝您擁有美味的日式果子時光！</p>
+          <p>拾月菓團隊</p>
+        </div>
+      `,
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error(error);
+          res.status(500).send({
+            message: '郵件發送失敗'
+          });
+        } else {
+          console.log('郵件已發送：' + info.response);
+          res.send({
+            message: '重置密碼郵件已發送到您的電子郵件地址。請檢查您的收件箱。',
+            token: token,
+          });
+        }
+      });
+
+      connection.release();
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({
+        message: 'Internal Server Error'
+      });
+    }
+  })
+);
+//新增重置密碼的路由 使用者點選重置密碼的連結後，會跳轉到這個路由
+
+userRouter.put(
+  '/reset-password',
+  expressAsyncHandler(async (req, res) => {
+    const {
+      newPassword,
+      token
+    } = req.body;
+
+    try {
+      const connection = await db.getConnection();
+
+      // 確認 token 是否有效
+      const [users] = await connection.query(
+        'SELECT * FROM users WHERE token = ?',
+
+        [token]
+      );
+
+      if (users.length === 0) {
+        res.status(401).send({
+          message: 'Invalid token'
+        });
+        return;
+      }
+
+      // 使用 bcrypt 加密新密碼
+      const hashedPassword = await bcrypt.hash(newPassword, 8);
+
+      // 使用正确的 SQL UPDATE 语句
+      const [results] = await connection.query(
+        'UPDATE users SET pwd = ? WHERE token = ?',
+        [hashedPassword, token]
+      );
+
+      connection.release();
+
+      res.send({
+        message: '密碼重置成功'
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).send({
+        message: 'Internal Server Error'
+      });
+    }
+  })
+);
+
+//新增註冊的路由
 userRouter.post(
   '/signup',
   expressAsyncHandler(async (req, res) => {
